@@ -1,19 +1,49 @@
+---
+name: IronClaw Supreme Version Monitor
+description: Dual-mode version monitoring — admin upstream checks and user update notifications via Telegram
+---
+
 # IronClaw Supreme Version Monitor
 
-**Automated version checking and Telegram alerts for IronClaw Supreme**
+**Dual-mode version monitoring and Telegram notifications for IronClaw Supreme**
 
 ## Overview
 
-This skill monitors IronClaw Supreme against upstream OpenClaw releases and sends Telegram notifications when updates are available. Designed to keep IronClaw Supreme current while allowing manual update control.
+This skill contains **two complementary checkers** that complete the IronClaw Supreme update chain:
+
+| Checker | Audience | Compares |
+|---------|----------|----------|
+| `version-checker.js` | **Dustin (admin)** | Local IronClaw → upstream OpenClaw |
+| `user-update-checker.js` | **Users** | Local clone → Dustin's GitHub |
+
+### Update Flow
+
+```
+OpenClaw publishes update
+    ↓
+version-checker.js detects it → Telegram alert to Dustin
+    ↓
+Dustin + Antigravity review, merge, clean redundancies
+    ↓
+Dustin pushes to github.com/dustin-olenslager/ironclaw-supreme
+    ↓
+user-update-checker.js detects it → Telegram alert to users
+    ↓
+Users run: git pull origin main
+```
 
 ## Features
 
-- ✅ **Daily Version Checks** - Automatic comparison with upstream OpenClaw
-- ✅ **Telegram Alerts** - Instant notifications when updates are available  
-- ✅ **UI Integration** - Cron job visible in IronClaw Supreme interface
-- ✅ **Smart Notifications** - Only alerts on significant version gaps
-- ✅ **Manual Update Control** - Never auto-updates, just notifies
-- ✅ **Detailed Reports** - Shows exactly what's new in upstream
+- ✅ **User Update Notifications** — Alerts users when Dustin pushes new commits
+- ✅ **Admin Upstream Checks** — Alerts Dustin when OpenClaw has new releases
+- ✅ **Smart Urgency Detection** — critical / high / medium / low
+- ✅ **OpenClaw Merge Detection** — Highlights when an update includes an upstream merge
+- ✅ **Commit Categorization** — Security, features, fixes, breaking changes
+- ✅ **Anti-Spam Dedup** — Won't re-alert for the same origin commit within cooldown
+- ✅ **Daily Monitoring** — Checks daily at 4 AM UTC
+- ✅ **Telegram Integration** — Rich notifications with actionable commands
+- ✅ **Manual Control** — Never auto-updates, just notifies
+- ✅ **Quality Controlled** — Every update tested by Dustin & Antigravity
 
 ## Installation
 
@@ -25,15 +55,17 @@ node setup.js
 
 2. **Configure Telegram notifications:**
 ```bash
-# Set your Telegram bot token and chat ID
 export TELEGRAM_BOT_TOKEN="your_bot_token_here"
 export TELEGRAM_CHAT_ID="your_chat_id_here"
 ```
 
-3. **Verify installation:**
+3. **Verify:**
 ```bash
-# Check if cron job was created
-ironclawsupreme cron list | grep version-monitor
+# Test Telegram connectivity
+node telegram-notifier.js --test
+
+# Run user update check
+node user-update-checker.js --now
 ```
 
 ## Configuration
@@ -41,22 +73,25 @@ ironclawsupreme cron list | grep version-monitor
 ### Environment Variables
 
 ```bash
-# Required for Telegram notifications
+# Required for Telegram alerts
 TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
 TELEGRAM_CHAT_ID=-1001234567890
 
-# Optional: Customize check frequency (default: daily at 4 AM UTC)
-VERSION_CHECK_SCHEDULE="0 4 * * *"
+# --- User Update Checker ---
+IRONCLAW_MIN_COMMITS=1            # Alert on any update (default: 1)
+IRONCLAW_ALERT_COOLDOWN=24        # Hours between repeat alerts (default: 24)
+IRONCLAW_WORKSPACE=/path/to/ws    # Override workspace directory
 
-# Optional: Minimum commits gap to trigger alert (default: 100)
-MIN_COMMITS_FOR_ALERT=100
+# --- Admin Version Checker ---
+VERSION_CHECK_SCHEDULE="0 4 * * *"  # Daily 4 AM UTC
+MIN_COMMITS_FOR_ALERT=100           # Upstream commits threshold
 ```
 
 ### Telegram Bot Setup
 
 1. **Create a bot:** Message @BotFather on Telegram
 2. **Get bot token:** Copy the token from BotFather
-3. **Find chat ID:** 
+3. **Find chat ID:**
    - Add bot to your chat
    - Send a message
    - Visit: `https://api.telegram.org/bot<TOKEN>/getUpdates`
@@ -64,143 +99,172 @@ MIN_COMMITS_FOR_ALERT=100
 
 ## How It Works
 
-### Version Check Process
+### User Update Check (`user-update-checker.js`)
 
-1. **Fetch upstream** - Gets latest OpenClaw releases and commits
-2. **Compare versions** - Calculates commits behind upstream
-3. **Evaluate significance** - Determines if update is worth alerting
-4. **Generate report** - Creates detailed summary of changes
-5. **Send notification** - Alerts via Telegram if updates are needed
+1. **Fetch origin** — `git fetch origin --quiet`
+2. **Count commits behind** — `git rev-list --count HEAD..origin/main`
+3. **Analyze commits** — Categorize by security/features/fixes/breaking
+4. **Determine urgency** — Based on commit types and count
+5. **Dedup check** — Skip if already alerted for this origin commit
+6. **Send notification** — Telegram alert with update instructions
 
-### Smart Alerting
+### Admin Version Check (`version-checker.js`)
 
-The system only sends alerts when:
-- Commits behind > minimum threshold (default: 100)
-- New releases are available (major/minor versions)
-- Security patches are detected in commit messages
-- Critical bug fixes are identified
+1. **Fetch upstream** — Gets latest OpenClaw releases and commits
+2. **Compare versions** — Calculates commits behind upstream
+3. **Evaluate significance** — Alert if > threshold (default: 100)
+4. **Generate report** — Detailed summary of upstream changes
+5. **Send notification** — Alerts Dustin to start an update session
 
-### Example Telegram Alert
+### Urgency Levels
+
+| Level | Trigger | Icon |
+|-------|---------|------|
+| `critical` | Security-related commits detected | 🚨 |
+| `high` | OpenClaw upstream merge or breaking changes | 🚀 |
+| `medium` | 5+ commits behind | 🦾 |
+| `low` | 1-4 commits behind | 📦 |
+
+### Example User Notification
 
 ```
-🚨 IronClaw Supreme Update Available
+🚀 Major IronClaw Supreme Update
 
-Current Version: Based on old OpenClaw
-Latest OpenClaw: v2026.2.19
-Commits Behind: 12,818
+📊 What's New:
+• 15 commits behind Dustin's latest
+• Includes latest OpenClaw upstream merge
+• 2 new features
+• 3 bug fixes
 
-🔥 Key Updates:
-• Auth session fixes (security)
-• WhatsApp messaging improvements  
-• Anthropic API enhancements
-• Token count caching (performance)
+🔄 Recent Changes:
+• `feat: Update to OpenClaw v2026.2.19 with redundancy cleanup`
+• `fix: Enhanced browser health monitoring thresholds`
+• `feat: Community skills validator improvements`
 
 ⚡ Action Required:
-Contact Antigravity for update deployment
+cd /home/node/.openclaw/workspace
+git pull origin main
 
-View details: /status
-Silence for 7 days: /silence-updates
+⚠️ Recommended: restart after updating
+systemctl restart ironclaw-supreme
+
+🛡️ Quality Assurance:
+✅ Tested by Dustin & Antigravity
+✅ Redundancy cleanup completed
+✅ Production-ready deployment
+
+📌 Your version: `7cb3a01d`
+📌 Latest: `main@a1b2c3d4`
+🕐 Checked: 2/19/2026, 4:00:00 AM UTC
 ```
 
 ## Manual Commands
 
-### Check Version Now
+### User: Check for Updates
+```bash
+cd skills/ironclaw-version-monitor
+node user-update-checker.js --now
+```
+
+### Admin: Check Upstream
 ```bash
 cd skills/ironclaw-version-monitor
 node version-checker.js --now
 ```
 
-### Send Test Notification
+### Test Telegram Connection
 ```bash
-cd skills/ironclaw-version-monitor  
+cd skills/ironclaw-version-monitor
 node telegram-notifier.js --test
 ```
 
-### Update Cron Schedule
+### Debug Mode
 ```bash
-# Daily at 4 AM UTC (default)
-ironclawsupreme cron update ironclaw-version-monitor --schedule "0 4 * * *"
-
-# Every 6 hours
-ironclawsupreme cron update ironclaw-version-monitor --schedule "0 */6 * * *"
+DEBUG=1 node user-update-checker.js --now
 ```
+
+## Cron Job Setup
+
+### User Update Checker
+
+Use `user-update-cron.json` — daily at 4 AM UTC:
+
+```bash
+# View the cron config
+cat user-update-cron.json
+
+# Add to your cron system
+cron add --name "IronClaw User Update" --schedule "0 4 * * *" \
+  --command "cd /home/node/.openclaw/workspace/skills/ironclaw-version-monitor && node user-update-checker.js"
+```
+
+### Admin Version Checker
+
+Uses `cron-job-config.json` — same schedule but checks upstream.
 
 ## Troubleshooting
 
-### Common Issues
-
-**Cron job not visible in UI:**
+### Telegram notifications not working
 ```bash
-# Check if job exists
-ironclawsupreme cron list
-
-# Recreate if missing
-node setup.js --force
-```
-
-**Telegram notifications not working:**
-```bash
-# Test Telegram configuration
+# Test connection
 node telegram-notifier.js --test
 
-# Check environment variables
+# Verify env vars
 echo $TELEGRAM_BOT_TOKEN
 echo $TELEGRAM_CHAT_ID
 ```
 
-**Version checks failing:**
+### User update check failing
 ```bash
-# Manual check with debug info
-node version-checker.js --debug
+# Check origin remote
+git remote -v | grep origin
 
-# Check git upstream configuration
-git remote -v | grep upstream
+# Manual fetch
+git fetch origin --verbose
+
+# Debug mode
+DEBUG=1 node user-update-checker.js --now
 ```
 
-### Debug Mode
-
-Run with full debugging:
+### Cache issues
 ```bash
-DEBUG=1 node version-checker.js --now
+# View cache
+cat /home/node/.openclaw/.user-update-cache.json
+
+# Clear cache to force re-alert
+rm /home/node/.openclaw/.user-update-cache.json
 ```
 
-## Integration
+## Files
 
-This skill integrates with:
-- **IronClaw Supreme cron system** - Scheduled execution
-- **Telegram Bot API** - Push notifications  
-- **Git upstream tracking** - Version comparison
-- **OpenClaw release API** - Official version data
+| File | Purpose |
+|------|---------|
+| `user-update-checker.js` | User-facing: local vs Dustin's GitHub |
+| `version-checker.js` | Admin: IronClaw vs upstream OpenClaw |
+| `telegram-notifier.js` | Telegram alert system (shared) |
+| `setup.js` | Installation script |
+| `user-update-cron.json` | Cron config for user checker |
+| `cron-job-config.json` | Cron config for admin checker |
+
+## Logs
+
+```bash
+# User update checker
+tail -f /home/node/.openclaw/logs/user-update-checker.log
+
+# Admin version checker
+tail -f /home/node/.openclaw/logs/version-monitor.log
+```
 
 ## Security
 
-- ✅ **No auto-updates** - Only notification, never executes changes
-- ✅ **Secure credentials** - Telegram tokens stored as environment variables
-- ✅ **Audit logging** - All version checks logged for review
-- ✅ **Rate limiting** - Prevents API spam
-
-## Maintenance
-
-### Log Management
-```bash
-# View recent logs
-tail -f logs/version-monitor.log
-
-# Rotate logs monthly
-logrotate /home/node/.ironclaw/logs/version-monitor.log
-```
-
-### Updating the Skill
-```bash
-# Pull latest skill version
-cd skills/ironclaw-version-monitor
-git pull origin main
-
-# Restart cron job
-ironclawsupreme cron restart ironclaw-version-monitor
-```
+- ✅ **No auto-updates** — Notification only, never executes changes
+- ✅ **Secure credentials** — Telegram tokens in environment variables
+- ✅ **Audit logging** — All checks logged with timestamps
+- ✅ **Rate limiting** — Cooldown prevents notification spam
+- ✅ **Quality gate** — Updates are tested before users receive them
 
 ---
 
-**Part of IronClaw Supreme Hardening System**  
+**Part of IronClaw Supreme Hardening System**
 *Keeping your production AI assistant current and secure*

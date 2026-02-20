@@ -1,13 +1,15 @@
 {
   "name": "ironclaw-version-monitor",
-  "version": "1.0.0",
-  "description": "Automated version checking and Telegram alerts for IronClaw Supreme",
+  "version": "2.0.0",
+  "description": "Version monitoring and user update notifications for IronClaw Supreme",
   "main": "version-checker.js",
   "scripts": {
     "setup": "node setup.js",
     "check": "node version-checker.js --now",
+    "check:user": "node user-update-checker.js --now",
     "test": "node telegram-notifier.js --test",
-    "start": "node version-checker.js"
+    "start": "node version-checker.js",
+    "start:user": "node user-update-checker.js"
   },
   "keywords": [
     "ironclaw-supreme",

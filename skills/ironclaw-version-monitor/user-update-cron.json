@@ -1,0 +1,17 @@
+{
+  "name": "IronClaw Supreme User Update Checker",
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 4 * * *",
+    "tz": "UTC"
+  },
+  "payload": {
+    "kind": "systemEvent",
+    "text": "Running IronClaw Supreme user update check via /home/node/.openclaw/workspace/skills/ironclaw-version-monitor/user-update-checker.js"
+  },
+  "delivery": {
+    "mode": "none"
+  },
+  "sessionTarget": "main",
+  "enabled": true
+}
