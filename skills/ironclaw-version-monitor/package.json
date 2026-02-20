@@ -1,0 +1,34 @@
+{
+  "name": "ironclaw-version-monitor",
+  "version": "1.0.0",
+  "description": "Automated version checking and Telegram alerts for IronClaw Supreme",
+  "main": "version-checker.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "check": "node version-checker.js --now",
+    "test": "node telegram-notifier.js --test",
+    "start": "node version-checker.js"
+  },
+  "keywords": [
+    "ironclaw-supreme",
+    "openclaw",
+    "version-monitoring",
+    "telegram-notifications",
+    "automation"
+  ],
+  "author": "IronClaw Supreme Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dustin-olenslager/ironclaw-supreme"
+  },
+  "bugs": {
+    "url": "https://github.com/dustin-olenslager/ironclaw-supreme/issues"
+  },
+  "homepage": "https://github.com/dustin-olenslager/ironclaw-supreme#readme"
+}

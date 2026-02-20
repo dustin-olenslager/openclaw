@@ -27,15 +27,15 @@
 - When Peter asks for links, reply with full `https://docs.openclaw.ai/...` URLs (not root-relative).
 - When you touch docs, end the reply with the `https://docs.openclaw.ai/...` URLs you referenced.
 - README (GitHub): keep absolute docs URLs (`https://docs.openclaw.ai/...`) so links work on GitHub.
-- Docs content must be generic: no personal device names/hostnames/paths; use placeholders like `user@gateway-host` and “gateway host”.
+- Docs content must be generic: no personal device names/hostnames/paths; use placeholders like `user@gateway-host` and ΓÇ£gateway hostΓÇ¥.
 
 ## Docs i18n (zh-CN)
 
 - `docs/zh-CN/**` is generated; do not edit unless the user explicitly asks.
-- Pipeline: update English docs → adjust glossary (`docs/.i18n/glossary.zh-CN.json`) → run `scripts/docs-i18n` → apply targeted fixes only if instructed.
+- Pipeline: update English docs ΓåÆ adjust glossary (`docs/.i18n/glossary.zh-CN.json`) ΓåÆ run `scripts/docs-i18n` ΓåÆ apply targeted fixes only if instructed.
 - Translation memory: `docs/.i18n/zh-CN.tm.jsonl` (generated).
 - See `docs/.i18n/README.md`.
-- The pipeline can be slow/inefficient; if it’s dragging, ping @jospalmbier on Discord instead of hacking around it.
+- The pipeline can be slow/inefficient; if itΓÇÖs dragging, ping @jospalmbier on Discord instead of hacking around it.
 
 ## exe.dev VM ops (general)
 
@@ -52,7 +52,7 @@
 
 - Runtime baseline: Node **22+** (keep Node + Bun paths working).
 - Install deps: `pnpm install`
-- If deps are missing (for example `node_modules` missing, `vitest not found`, or `command not found`), run the repo’s package-manager install command (prefer lockfile/README-defined PM), then rerun the exact requested command once. Apply this to test/build/lint/typecheck/dev commands; if retry still fails, report the command and first actionable error.
+- If deps are missing (for example `node_modules` missing, `vitest not found`, or `command not found`), run the repoΓÇÖs package-manager install command (prefer lockfile/README-defined PM), then rerun the exact requested command once. Apply this to test/build/lint/typecheck/dev commands; if retry still fails, report the command and first actionable error.
 - Pre-commit hooks: `prek install` (runs same checks as CI)
 - Also supported: `bun install` (keep `pnpm-lock.yaml` + Bun patching in sync when touching deps/patches).
 - Prefer Bun for TypeScript execution (scripts, dev, tests): `bun <file.ts>` / `bunx <tool>`.
@@ -75,7 +75,7 @@
 - If this pattern is needed, stop and get explicit approval before shipping; default behavior is to split/refactor into an explicit class hierarchy and keep members strongly typed.
 - In tests, prefer per-instance stubs over prototype mutation (`SomeClass.prototype.method = ...`) unless a test explicitly documents why prototype-level patching is required.
 - Add brief code comments for tricky or non-obvious logic.
-- Keep files concise; extract helpers instead of “V2” copies. Use existing patterns for CLI options and dependency injection via `createDefaultDeps`.
+- Keep files concise; extract helpers instead of ΓÇ£V2ΓÇ¥ copies. Use existing patterns for CLI options and dependency injection via `createDefaultDeps`.
 - Aim to keep files under ~700 LOC; guideline only (not a hard guardrail). Split/refactor when it improves clarity or testability.
 - Naming: use **OpenClaw** for product/app/docs headings; use `openclaw` for CLI command, package/binary, paths, and config keys.
 
@@ -92,7 +92,7 @@
 - Run `pnpm test` (or `pnpm test:coverage`) before pushing when you touch logic.
 - Do not set test workers above 16; tried already.
 - Live tests (real keys): `CLAWDBOT_LIVE_TEST=1 pnpm test:live` (OpenClaw-only) or `LIVE=1 pnpm test:live` (includes provider live tests). Docker: `pnpm test:docker:live-models`, `pnpm test:docker:live-gateway`. Onboarding Docker E2E: `pnpm test:docker:onboard`.
-- Full kit + what’s covered: `docs/testing.md`.
+- Full kit + whatΓÇÖs covered: `docs/testing.md`.
 - Changelog: user-facing changes only; no internal/meta notes (version alignment, appcast reminders, release process).
 - Pure test additions/fixes generally do **not** need a changelog entry unless they alter user-facing behavior or the user asks for one.
 - Mobile: before using a simulator, check for connected real devices (iOS + Android) and prefer them when available.
@@ -153,18 +153,18 @@
 - Never update the Carbon dependency.
 - Any dependency with `pnpm.patchedDependencies` must use an exact version (no `^`/`~`).
 - Patching dependencies (pnpm patches, overrides, or vendored changes) requires explicit approval; do not do this by default.
-- CLI progress: use `src/cli/progress.ts` (`osc-progress` + `@clack/prompts` spinner); don’t hand-roll spinners/bars.
+- CLI progress: use `src/cli/progress.ts` (`osc-progress` + `@clack/prompts` spinner); donΓÇÖt hand-roll spinners/bars.
 - Status output: keep tables + ANSI-safe wrapping (`src/terminal/table.ts`); `status --all` = read-only/pasteable, `status --deep` = probes.
 - Gateway currently runs only as the menubar app; there is no separate LaunchAgent/helper label installed. Restart via the OpenClaw Mac app or `scripts/restart-mac.sh`; to verify/kill use `launchctl print gui/$UID | grep openclaw` rather than assuming a fixed label. **When debugging on macOS, start/stop the gateway via the app, not ad-hoc tmux sessions; kill any temporary tunnels before handoff.**
 - macOS logs: use `./scripts/clawlog.sh` to query unified logs for the OpenClaw subsystem; it supports follow/tail/category filters and expects passwordless sudo for `/usr/bin/log`.
 - If shared guardrails are available locally, review them; otherwise follow this repo's guidance.
-- SwiftUI state management (iOS/macOS): prefer the `Observation` framework (`@Observable`, `@Bindable`) over `ObservableObject`/`@StateObject`; don’t introduce new `ObservableObject` unless required for compatibility, and migrate existing usages when touching related code.
+- SwiftUI state management (iOS/macOS): prefer the `Observation` framework (`@Observable`, `@Bindable`) over `ObservableObject`/`@StateObject`; donΓÇÖt introduce new `ObservableObject` unless required for compatibility, and migrate existing usages when touching related code.
 - Connection providers: when adding a new connection, update every UI surface and docs (macOS app, web UI, mobile if applicable, onboarding/overview docs) and add matching status + configuration forms so provider lists and settings stay in sync.
 - Version locations: `package.json` (CLI), `apps/android/app/build.gradle.kts` (versionName/versionCode), `apps/ios/Sources/Info.plist` + `apps/ios/Tests/Info.plist` (CFBundleShortVersionString/CFBundleVersion), `apps/macos/Sources/OpenClaw/Resources/Info.plist` (CFBundleShortVersionString/CFBundleVersion), `docs/install/updating.md` (pinned npm version), `docs/platforms/mac/release.md` (APP_VERSION/APP_BUILD examples), Peekaboo Xcode projects/Info.plists (MARKETING_VERSION/CURRENT_PROJECT_VERSION).
 - "Bump version everywhere" means all version locations above **except** `appcast.xml` (only touch appcast when cutting a new macOS Sparkle release).
-- **Restart apps:** “restart iOS/Android apps” means rebuild (recompile/install) and relaunch, not just kill/launch.
+- **Restart apps:** ΓÇ£restart iOS/Android appsΓÇ¥ means rebuild (recompile/install) and relaunch, not just kill/launch.
 - **Device checks:** before testing, verify connected real devices (iOS/Android) before reaching for simulators/emulators.
-- iOS Team ID lookup: `security find-identity -p codesigning -v` → use Apple Development (…) TEAMID. Fallback: `defaults read com.apple.dt.Xcode IDEProvisioningTeamIdentifiers`.
+- iOS Team ID lookup: `security find-identity -p codesigning -v` ΓåÆ use Apple Development (ΓÇª) TEAMID. Fallback: `defaults read com.apple.dt.Xcode IDEProvisioningTeamIdentifiers`.
 - A2UI bundle hash: `src/canvas-host/a2ui/.bundle.hash` is auto-generated; ignore unexpected changes, and only regenerate via `pnpm canvas:a2ui:bundle` (or `scripts/bundle-a2ui.sh`) when needed. Commit the hash as a separate commit.
 - Release signing/notary keys are managed outside the repo; follow internal release docs.
 - Notary auth env vars (`APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_API_KEY_P8`) are expected in your environment (per internal release docs).
@@ -179,19 +179,19 @@
   - If commit/push already requested, auto-stage and include formatting-only follow-ups in the same commit (or a tiny follow-up commit if needed), no extra confirmation.
   - Only ask when changes are semantic (logic/data/behavior).
 - Lobster seam: use the shared CLI palette in `src/terminal/palette.ts` (no hardcoded colors); apply palette to onboarding/config prompts and other TTY UI output as needed.
-- **Multi-agent safety:** focus reports on your edits; avoid guard-rail disclaimers unless truly blocked; when multiple agents touch the same file, continue if safe; end with a brief “other files present” note only if relevant.
+- **Multi-agent safety:** focus reports on your edits; avoid guard-rail disclaimers unless truly blocked; when multiple agents touch the same file, continue if safe; end with a brief ΓÇ£other files presentΓÇ¥ note only if relevant.
 - Bug investigations: read source code of relevant npm dependencies and all related local code before concluding; aim for high-confidence root cause.
 - Code style: add brief comments for tricky logic; keep files under ~500 LOC when feasible (split/refactor as needed).
 - Tool schema guardrails (google-antigravity): avoid `Type.Union` in tool input schemas; no `anyOf`/`oneOf`/`allOf`. Use `stringEnum`/`optionalStringEnum` (Type.Unsafe enum) for string lists, and `Type.Optional(...)` instead of `... | null`. Keep top-level tool schema as `type: "object"` with `properties`.
 - Tool schema guardrails: avoid raw `format` property names in tool schemas; some validators treat `format` as a reserved keyword and reject the schema.
-- When asked to open a “session” file, open the Pi session logs under `~/.openclaw/agents/<agentId>/sessions/*.jsonl` (use the `agent=<id>` value in the Runtime line of the system prompt; newest unless a specific ID is given), not the default `sessions.json`. If logs are needed from another machine, SSH via Tailscale and read the same path there.
+- When asked to open a ΓÇ£sessionΓÇ¥ file, open the Pi session logs under `~/.openclaw/agents/<agentId>/sessions/*.jsonl` (use the `agent=<id>` value in the Runtime line of the system prompt; newest unless a specific ID is given), not the default `sessions.json`. If logs are needed from another machine, SSH via Tailscale and read the same path there.
 - Do not rebuild the macOS app over SSH; rebuilds must be run directly on the Mac.
 - Never send streaming/partial replies to external messaging surfaces (WhatsApp, Telegram); only final replies should be delivered there. Streaming/tool events may still go to internal UIs/control channel.
 - Voice wake forwarding tips:
-  - Command template should stay `openclaw-mac agent --message "${text}" --thinking low`; `VoiceWakeForwarder` already shell-escapes `${text}`. Don’t add extra quotes.
-  - launchd PATH is minimal; ensure the app’s launch agent PATH includes standard system paths plus your pnpm bin (typically `$HOME/Library/pnpm`) so `pnpm`/`openclaw` binaries resolve when invoked via `openclaw-mac`.
-- For manual `openclaw message send` messages that include `!`, use the heredoc pattern noted below to avoid the Bash tool’s escaping.
-- Release guardrails: do not change version numbers without operator’s explicit consent; always ask permission before running any npm publish/release step.
+  - Command template should stay `openclaw-mac agent --message "${text}" --thinking low`; `VoiceWakeForwarder` already shell-escapes `${text}`. DonΓÇÖt add extra quotes.
+  - launchd PATH is minimal; ensure the appΓÇÖs launch agent PATH includes standard system paths plus your pnpm bin (typically `$HOME/Library/pnpm`) so `pnpm`/`openclaw` binaries resolve when invoked via `openclaw-mac`.
+- For manual `openclaw message send` messages that include `!`, use the heredoc pattern noted below to avoid the Bash toolΓÇÖs escaping.
+- Release guardrails: do not change version numbers without operatorΓÇÖs explicit consent; always ask permission before running any npm publish/release step.
 
 ## NPM + 1Password (publish/verify)
 
@@ -237,3 +237,117 @@
   - `node --import tsx scripts/release-check.ts`
   - `pnpm release:check`
   - `pnpm test:install:smoke` or `OPENCLAW_INSTALL_SMOKE_SKIP_NONROOT=1 pnpm test:install:smoke` for non-root smoke path.
+
+---
+
+# IronClaw Supreme — Fork-Specific Guidelines
+
+> **This section applies only to the `dustin-olenslager/ironclaw-supreme` fork.**
+> Everything above is upstream OpenClaw's AGENTS.md, preserved verbatim.
+
+## Fork Architecture
+
+- **Zero core modifications.** All IronClaw custom code lives in isolated directories:
+  - `scripts/` — Host-level monitoring and maintenance tools
+  - `skills/community-skills/` — Community skills security validator
+  - `skills/ironclaw-version-monitor/` — Upstream version tracker with Telegram alerts
+  - `config/` — Configuration files for browser monitoring
+- **Two-branch structure:** `main` (stable) + `dev` (development)
+- The fork's `README.md` and this `AGENTS.md` are the only upstream files modified.
+
+## IronClaw Supreme Update Protocol (MANDATORY)
+
+**⚠️ FOR EVERY OPENCLAW UPDATE — READ THIS BEFORE ANY MERGE/REBASE ⚠️**
+
+When updating IronClaw Supreme to latest upstream OpenClaw, **ALWAYS** follow this redundancy removal process:
+
+### Phase 1: Feature Audit (BEFORE merging upstream)
+For each IronClaw feature, determine:
+- ✅ **KEEP**: OpenClaw has no equivalent → preserve our implementation
+- ❌ **REMOVE**: OpenClaw now has equivalent/better → delete our version
+- 🔄 **MERGE**: OpenClaw has partial solution → integrate best of both
+
+### Phase 2: Current IronClaw Features (updated 2026-02-19)
+
+**Browser Hardening** (host-level — OpenClaw runs inside Docker):
+- ✅ Chrome process limiter (`scripts/chrome-process-limiter.sh`) — host-level process monitoring
+- ✅ Enhanced browser cleanup (`scripts/enhanced-browser-cleanup-v2.sh`) — host-level cleanup
+- ✅ Browser health monitor (`scripts/browser-health-monitor.sh`) — host-level health checks
+- ✅ Browser monitoring config (`config/browser-monitoring-config.json`)
+- ✅ Chrome process limits config (`config/chrome-process-limits.json`)
+
+**Monitoring & Maintenance:**
+- ✅ Daily optimization (`scripts/daily-optimization.sh`) — Docker prune, log rotation
+- ✅ Health check (`scripts/health-check.js`) — Gateway endpoint verification
+
+**Security:**
+- ✅ Community skills validator (`skills/community-skills/`) — whitelist + safety scoring
+- ✅ Version monitor (`skills/ironclaw-version-monitor/`) — daily upstream checks + Telegram
+
+**Fork Management:**
+- ✅ Update from upstream (`scripts/update-from-upstream.sh`)
+
+**Documentation:**
+- ✅ `PRODUCTION_GUIDE.md`, `MIGRATION_GUIDE.md`, `UPSTREAM_WORKFLOW.md`, `FORK_STRATEGY_ANALYSIS.md`
+- ✅ `HEARTBEAT.md`, `IDENTITY.md`, `MEMORY.md`, `SOUL.md`, `TOOLS.md`, `USER.md`
+
+### Phase 3: Cleanup Process (AFTER determining what to remove)
+For features marked ❌ REMOVE:
+1. **Delete code**: Remove scripts, files, directories
+2. **Clean docs**: Remove from README.md, SKILL.md files, all guides
+3. **Update comparisons**: Fix README comparison tables
+4. **Remove commands**: Delete from Quick Commands section
+5. **Clean dependencies**: Remove unused packages/configs
+
+### Phase 4: Commit Message Format
+```
+feat: Update to OpenClaw v[VERSION] with redundancy cleanup
+
+UPDATED TO: OpenClaw v[VERSION] ([DATE])
+
+FEATURES REMOVED (now redundant):
+❌ [Feature] - Reason
+
+FEATURES PRESERVED (still unique):
+✅ [Feature] - Reason
+```
+
+## Update History
+
+### 2026-02-19: Updated to OpenClaw v2026.2.19
+
+**REMOVED (stale documentation, no code backing):**
+- ❌ `ANTIGRAVITY_UPDATE_PROMPT_ENHANCED.md` — internal prompt template, not a feature
+- ❌ `BROWSER-CRASH-SOLUTION.md` — stale workaround doc for old OpenClaw version
+- ❌ `CHROME_PROCESS_PROLIFERATION_FIX.md` — stale workaround doc for old OpenClaw version
+- ❌ `TASK_COMPLETION_SUMMARY.md` — one-time task log, no ongoing value
+- ❌ Inflated README claims about "4-tier API fallback" (was config, not code)
+- ❌ Inflated README claims about "audio hardening" (was config, not code)
+- ❌ Misleading comparison metrics (unverifiable performance numbers)
+
+**PRESERVED (unique host-level tooling):**
+- ✅ All browser hardening scripts — host-level, complementary to OpenClaw's app-level fixes
+- ✅ Community skills validator — complementary to OpenClaw's plugin pinning
+- ✅ Version monitor with Telegram alerts — no upstream equivalent
+- ✅ Daily optimization routines — no upstream equivalent
+- ✅ Fork management scripts — essential for fork maintenance
+- ✅ Production/migration documentation — still relevant
+
+**RESULT:** IronClaw Supreme now has 30 custom files providing genuine host-level
+production hardening. README rewritten to be honest — no inflated claims.
+
+## Known Issues & Solutions
+
+- **Encoding**: Windows may add BOM to shell scripts. Use `utf8NoBOM` encoding when writing `.sh` files.
+- **Symlinks**: `scripts/browser-cleanup.sh` is a symlink to `enhanced-browser-cleanup-v2.sh`. May not work on Windows.
+- **Skills directory**: Both upstream OpenClaw and IronClaw add files to `skills/`. Custom IronClaw skills are in `skills/community-skills/` and `skills/ironclaw-version-monitor/` only.
+
+## Decisions Log
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-02-19 | Keep browser hardening scripts | OpenClaw v2026.2.19 improvements are app-level (sandbox, relay), not host-level process management |
+| 2026-02-19 | Remove API/audio claims | No custom code for these — were config-level settings presented as features |
+| 2026-02-19 | Rewrite README | Previous README contained unverifiable metrics and inflated feature claims |
+| 2026-02-19 | Preserve upstream AGENTS.md | Fork should inherit upstream's dev conventions |
+

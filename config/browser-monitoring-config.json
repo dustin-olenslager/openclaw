@@ -1,0 +1,21 @@
+{
+  "browser": {
+    "cleanup_interval_seconds": 3600,
+    "health_check_interval_seconds": 300,
+    "max_restart_attempts": 3,
+    "restart_backoff_seconds": [10, 30, 60],
+    "zombie_detection_enabled": true,
+    "lock_file_max_age_minutes": 60,
+    "memory_warning_threshold_mb": 1024,
+    "system_memory_warning_threshold_percent": 85,
+    "cdp_port": 18800,
+    "profile_dir": "/home/node/.openclaw/browser/openclaw/user-data",
+    "log_retention_days": 7
+  },
+  "monitoring": {
+    "enabled": true,
+    "alert_on_consecutive_failures": 3,
+    "cleanup_on_health_failure": true,
+    "log_level": "info"
+  }
+}

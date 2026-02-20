@@ -1,0 +1,33 @@
+{
+  "name": "community-skills-validator",
+  "version": "1.0.0",
+  "description": "Automated validation system for OpenClaw community skills",
+  "main": "validate-skill.js",
+  "bin": {
+    "validate-skill": "./validate-skill.js"
+  },
+  "scripts": {
+    "validate": "node validate-skill.js",
+    "test": "node test-validator.js"
+  },
+  "keywords": [
+    "openclaw",
+    "skills",
+    "community",
+    "validation",
+    "security"
+  ],
+  "author": "IronClaw Supreme",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dustin-olenslager/ironclaw-supreme"
+  },
+  "bugs": {
+    "url": "https://github.com/dustin-olenslager/ironclaw-supreme/issues"
+  },
+  "homepage": "https://github.com/dustin-olenslager/ironclaw-supreme#readme"
+}

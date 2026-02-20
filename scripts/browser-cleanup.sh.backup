@@ -1,0 +1,7 @@
+#!/bin/bash
+# Clean stale Chrome lock files from previous container runs
+# These persist on the volume and prevent Chrome from starting in new containers
+PROFILE_DIR="/home/node/.openclaw/browser/openclaw/user-data"
+if [ -d "$PROFILE_DIR" ]; then
+  rm -f "$PROFILE_DIR/SingletonLock" "$PROFILE_DIR/SingletonCookie" "$PROFILE_DIR/SingletonSocket"
+fi
