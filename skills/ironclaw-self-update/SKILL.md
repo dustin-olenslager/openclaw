@@ -1,113 +1,99 @@
 ---
 name: IronClaw Supreme Self-Update
-description: How to update this IronClaw Supreme instance when the user requests it
+description: Handle user requests to update IronClaw Supreme to the latest version
 ---
 
 # IronClaw Supreme Self-Update
 
-## When to Use This Skill
+This skill handles user requests to update their IronClaw Supreme instance.
 
-Use this skill when the user says any of:
+## Trigger Phrases
+
 - "Update yourself"
-- "Pull the latest"
+- "Update to the newest version of IronClaw"
 - "Update IronClaw"
-- "There's an update available"
-- "Update from the fork"
-- "Self update"
-- "Get the latest version"
+- "Pull the latest"
+- "Are there any updates?"
+- "Check for updates"
+- "Upgrade yourself"
 
-## What This Does
+## How It Works
 
-This IronClaw Supreme instance tracks `dustin-olenslager/ironclaw-supreme` on GitHub.
-Updates include the latest OpenClaw upstream code PLUS IronClaw-specific hardening,
-tested and quality-controlled by the maintainer before being pushed.
+IronClaw Supreme runs inside a Docker container. The code is **baked into the image** during build — it's NOT mounted from the filesystem. This means:
+
+- `git pull` in the workspace updates **skills and scripts only** (useful, but not a full update)
+- A **full update** requires pulling a new Docker image and recreating the container
 
 ## Update Procedure
 
-### Step 1: Check What's Available
-
-Run this command first to see what would change:
+### Step 1: Check what's available
 
 ```bash
-bash /home/node/.openclaw/workspace/scripts/self-update.sh --check
+bash scripts/container-update.sh --check
 ```
 
-**Report the output to the user.** Tell them:
-- How many commits behind they are
-- What the recent changes include
-- Whether it includes an OpenClaw upstream merge (look for "Update to OpenClaw" in commit messages)
+This will:
+- Pull the latest image from GHCR
+- Compare it with the currently running container
+- Report whether an update is available
 
-If the output says `UP_TO_DATE`, tell the user they're already on the latest version. Stop here.
+Tell the user what you found.
 
-### Step 2: Confirm with the User
+### Step 2: Ask for confirmation
 
-Before proceeding, tell the user:
-> "There are **N** commits available. This update includes: [summary of changes].
-> I'll pull the update and restart. You'll lose this conversation session — start a new one after.
-> Proceed?"
+**ALWAYS ask the user before proceeding.** Say something like:
 
-**Wait for confirmation.** Do NOT proceed without the user saying yes.
+> An update is available. Applying it will restart the container, which will **end our current conversation**. You'll be able to start a new conversation once the update completes (usually under 2 minutes). Shall I proceed?
 
-### Step 3: Pull the Update
+### Step 3: Apply the update
+
+If the user confirms:
 
 ```bash
-bash /home/node/.openclaw/workspace/scripts/self-update.sh --restart
+bash scripts/container-update.sh --update
 ```
 
-**Important:** The `--restart` flag will restart the gateway after pulling.
-This means the current session will end. Warn the user about this.
+The script auto-detects the best method:
+1. **Docker socket mode** — If `/var/run/docker.sock` is mounted, it pulls and recreates directly
+2. **Watchtower mode** — If a Watchtower container is running, it signals it to check now
+3. **Manual mode** — If neither is available, it prints instructions for the user to run on the host
 
-If the user does NOT want a restart, use this instead (pull only):
+### Step 4 (if manual mode): Give clear instructions
 
-```bash
-bash /home/node/.openclaw/workspace/scripts/self-update.sh
-```
+If the script falls back to manual mode, tell the user:
 
-Note: Without restart, code changes won't take effect until the next restart.
+> I don't have Docker socket access, so I can't restart the container myself. Here's what to do:
+>
+> 1. SSH into your server
+> 2. Run: `docker pull ghcr.io/dustin-olenslager/ironclaw-supreme:main`
+> 3. Run: `docker compose down && docker compose up -d`
+>
+> Or if you're using Coolify, just hit "Redeploy" on the dashboard.
 
-### Step 4: Confirm Success
+## Quick Workspace Update (Skills/Scripts Only)
 
-After the script runs, check the output:
-- `✅ Updated successfully!` — Report the before/after commits and changes
-- `✅ Already up to date.` — Tell the user no action was needed
-- `❌` or error — Report the error and suggest manual intervention
+If the user just wants the latest skills and scripts (not a full container rebuild):
 
-## Troubleshooting
-
-If the update fails, try these in order:
-
-### Remote URL is wrong
-```bash
-git -C /home/node/.openclaw/workspace remote set-url origin https://github.com/dustin-olenslager/ironclaw-supreme.git
-```
-
-### Merge conflicts
-```bash
-cd /home/node/.openclaw/workspace
-git stash
-git pull origin main --ff-only
-git stash pop
-```
-
-### Nuclear option (reset to latest)
-⚠️ Only suggest this if the user confirms — it discards local changes:
 ```bash
 cd /home/node/.openclaw/workspace
 git fetch origin main
-git reset --hard origin/main
+git pull origin main --ff-only
 ```
 
-## Safety Rules
+This is fast, doesn't require restart, and updates:
+- Skills (like this one)
+- Shell scripts in `scripts/`
+- Configuration files
 
-1. **Always check first** (`--check`) before pulling
-2. **Always confirm** with the user before executing the update
-3. **Warn about restart** — the session will end
-4. **Never run the nuclear option** without explicit user confirmation
-5. **Report actual output** — don't guess or assume success
+But does NOT update:
+- Core OpenClaw gateway code
+- Node.js dependencies
+- Built UI assets
 
-## Environment
+## Important Notes
 
-- Workspace: `/home/node/.openclaw/workspace`
-- Script: `scripts/self-update.sh`
-- Logs: `/home/node/.openclaw/logs/self-update.log`
-- Source repo: `https://github.com/dustin-olenslager/ironclaw-supreme`
+- **NEVER force-push or reset** — always use `--ff-only` for pulls
+- **ALWAYS warn the user** that a container update ends the current conversation
+- **The container typically restarts in under 2 minutes**
+- **GHCR image**: `ghcr.io/dustin-olenslager/ironclaw-supreme:main`
+- **If Docker socket is not mounted**, you cannot restart the container from inside it — this is a security feature, not a bug

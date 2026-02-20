@@ -1,0 +1,82 @@
+name: Notify Update Available
+
+# Fires after Docker Release completes successfully.
+# Sends Telegram notification to users.
+
+on:
+  workflow_run:
+    workflows: ["Docker Release"]
+    types:
+      - completed
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+
+      - name: Check Telegram secrets
+        id: secrets_check
+        run: |
+          if [ -z "${{ secrets.TELEGRAM_BOT_TOKEN }}" ] || [ -z "${{ secrets.TELEGRAM_CHAT_ID }}" ]; then
+            echo "⚠️ Telegram secrets not configured. Skipping notification."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build notification
+        if: steps.secrets_check.outputs.skip != 'true'
+        id: message
+        run: |
+          # Get commit info
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          COMMIT_AUTHOR=$(git log -1 --pretty=%an)
+          COMMIT_COUNT=$(git rev-list --count HEAD~10..HEAD 2>/dev/null || echo "?")
+
+          # Get recent changes summary
+          CHANGES=$(git log --oneline -5 --pretty="• %s")
+
+          # Build message
+          MSG="🚀 *IronClaw Supreme Update Available*
+
+          📦 *New image published to GHCR*
+          
+          *Latest commit:* \`${COMMIT_SHA}\` — ${COMMIT_MSG}
+          *By:* ${COMMIT_AUTHOR}
+
+          *Recent changes:*
+          ${CHANGES}
+
+          ⚡ *How to update:*
+          💬 Tell your IronClaw: \"Update yourself\"
+
+          📋 Or manually:
+          \`\`\`
+          docker pull ghcr.io/dustin-olenslager/ironclaw-supreme:main
+          docker compose down && docker compose up -d
+          \`\`\`
+
+          🐳 \`ghcr.io/dustin-olenslager/ironclaw-supreme:main\`"
+
+          # Escape for JSON
+          MSG_ESCAPED=$(echo "$MSG" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')
+
+          echo "body=$MSG_ESCAPED" >> "$GITHUB_OUTPUT"
+
+      - name: Send Telegram notification
+        if: steps.secrets_check.outputs.skip != 'true'
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
+              \"text\": ${{ steps.message.outputs.body }},
+              \"parse_mode\": \"Markdown\",
+              \"disable_web_page_preview\": true
+            }"

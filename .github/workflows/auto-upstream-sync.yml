@@ -1,0 +1,133 @@
+name: Auto Upstream Sync
+
+# Checks OpenClaw upstream daily and creates a PR if we're behind.
+# NEVER auto-merges — Dustin must review.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC
+  workflow_dispatch:
+    inputs:
+      force_pr:
+        description: 'Create PR even if one already exists'
+        type: boolean
+        default: false
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout IronClaw Supreme
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name 'IronClaw Sync Bot'
+          git config user.email 'ironclaw-bot@users.noreply.github.com'
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/openclaw/openclaw.git || true
+          git fetch upstream main --no-tags --quiet
+
+      - name: Check for new upstream commits
+        id: check
+        run: |
+          BEHIND=$(git rev-list --count HEAD..upstream/main)
+          echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+          if [ "$BEHIND" -eq 0 ]; then
+            echo "✅ Already up to date with upstream."
+          else
+            echo "🔄 $BEHIND commits behind upstream."
+            echo "Last 5 upstream commits:"
+            git log --oneline HEAD..upstream/main | head -5
+          fi
+
+      - name: Check for existing sync PR
+        if: steps.check.outputs.behind != '0'
+        id: existing_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_PRS=$(gh pr list --head "upstream-sync/" --state open --json number --jq 'length')
+          echo "open_prs=$OPEN_PRS" >> "$GITHUB_OUTPUT"
+          if [ "$OPEN_PRS" -gt 0 ] && [ "${{ inputs.force_pr }}" != "true" ]; then
+            echo "⚠️ Existing sync PR found. Skipping. Use force_pr=true to override."
+          fi
+
+      - name: Create sync branch and PR
+        if: |
+          steps.check.outputs.behind != '0' &&
+          (steps.existing_pr.outputs.open_prs == '0' || inputs.force_pr == true)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BEHIND: ${{ steps.check.outputs.behind }}
+          SYNC_DATE: ${{ steps.check.outputs.date }}
+        run: |
+          BRANCH="upstream-sync/${SYNC_DATE}"
+
+          # Create sync branch from current main
+          git checkout -b "$BRANCH"
+
+          # Attempt merge
+          if git merge upstream/main --no-edit -m "chore: Merge upstream OpenClaw (${BEHIND} commits)"; then
+            CONFLICT_NOTE=""
+          else
+            # Merge has conflicts — commit what we can, note in PR
+            git add -A
+            git commit --no-edit -m "chore: Merge upstream OpenClaw (${BEHIND} commits, conflicts present)" || true
+            CONFLICT_NOTE="\n\n⚠️ **Merge conflicts detected.** Please resolve manually before merging."
+          fi
+
+          git push origin "$BRANCH"
+
+          # Get commit summary for PR body
+          COMMIT_LOG=$(git log --oneline "main..upstream/main" | head -20)
+          TOTAL=$BEHIND
+
+          gh pr create \
+            --title "⬆️ Upstream sync: ${TOTAL} commits from OpenClaw (${SYNC_DATE})" \
+            --body "## Upstream Sync
+
+          **${TOTAL} new commits** from [OpenClaw](https://github.com/openclaw/openclaw) main branch.
+
+          ### Recent changes:
+          \`\`\`
+          ${COMMIT_LOG}
+          \`\`\`
+          ${CONFLICT_NOTE}
+
+          ### Review checklist:
+          - [ ] No conflicts with IronClaw customizations
+          - [ ] Gateway starts cleanly after merge
+          - [ ] Skills/scripts not broken by upstream changes
+          - [ ] Docker image builds successfully
+
+          *Auto-created by IronClaw Sync Bot*" \
+            --base main \
+            --head "$BRANCH" \
+            --label "upstream-sync" || echo "PR creation failed (label may not exist, creating without)"
+
+          # If label creation failed, try without label
+          if [ $? -ne 0 ]; then
+            gh pr create \
+              --title "⬆️ Upstream sync: ${TOTAL} commits from OpenClaw (${SYNC_DATE})" \
+              --body "Upstream sync — ${TOTAL} commits from OpenClaw." \
+              --base main \
+              --head "$BRANCH"
+          fi
+
+          echo "✅ PR created for ${TOTAL} upstream commits."
